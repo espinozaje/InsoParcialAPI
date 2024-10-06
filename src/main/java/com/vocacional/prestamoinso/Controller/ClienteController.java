@@ -1,0 +1,51 @@
+package com.vocacional.prestamoinso.Controller;
+
+import com.vocacional.prestamoinso.DTO.ClienteDTO;
+import com.vocacional.prestamoinso.DTO.ReniecResponseDTO;
+import com.vocacional.prestamoinso.Entity.Cliente;
+import com.vocacional.prestamoinso.Exception.ConflictException;
+import com.vocacional.prestamoinso.Repository.ClienteRepository;
+import com.vocacional.prestamoinso.Service.ClienteService;
+import com.vocacional.prestamoinso.Service.JwtUtilService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/clientes")
+public class ClienteController {
+
+    @Autowired
+    private ClienteService clienteService;
+
+    @Autowired
+    private JwtUtilService jwtUtilService;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
+
+    @PostMapping("/registrar")
+    public ResponseEntity<Cliente> registrarCliente(@RequestBody ClienteDTO registroClienteDTO) {
+        if (clienteRepository.existsByDni(registroClienteDTO.getDni())) {
+            throw new ConflictException("Cliente ya existe"); // Asegúrate de definir esta excepción
+        }
+        Cliente cliente = clienteService.registrarCliente(registroClienteDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cliente);
+    }
+
+
+
+
+    @GetMapping("/{dni}")
+    public ResponseEntity<ReniecResponseDTO> obtenerDatosCliente(@PathVariable String dni) {
+        ReniecResponseDTO datosCliente = clienteService.validarDNI(dni);
+        if (datosCliente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // No se encontró el cliente en RENIEC
+        }
+        return ResponseEntity.ok(datosCliente); // Retorna los datos del cliente
+    }
+}
