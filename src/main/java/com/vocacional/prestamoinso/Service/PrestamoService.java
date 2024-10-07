@@ -105,6 +105,25 @@ public class PrestamoService {
             double totalPagar = prestamo.getMonto() + (prestamo.getMonto() * prestamo.getInteres() / 100);
             return totalPagar / prestamo.getPlazo();
         }
+
+
+        //esto descomentarlo en caso el profesor quiera establecer mas plazos con un interes en especifico
+        //solo modifican el numero de setinteres
+       // if (prestamo.getPlazo()==1){
+         //   prestamo.setInteres(10);
+           // double totalPagar = prestamo.getMonto() + (prestamo.getMonto() * prestamo.getInteres() / 100);
+            //return totalPagar / prestamo.getPlazo();
+       // }
+        //else if(prestamo.getPlazo()>1 && prestamo.getPlazo()<=6){
+          //  prestamo.setInteres(20);
+           // double totalPagar = prestamo.getMonto() + (prestamo.getMonto() * prestamo.getInteres() / 100);
+            //sreturn totalPagar / prestamo.getPlazo();
+        //}
+        //else {
+          //  prestamo.setInteres(50);
+           // double totalPagar = prestamo.getMonto() + (prestamo.getMonto() * prestamo.getInteres() / 100);
+            //return totalPagar / prestamo.getPlazo();
+       // }
     }
 
     public List<Prestamo> findByClienteDni(String dni){
