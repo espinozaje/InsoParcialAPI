@@ -345,10 +345,14 @@ public class PrestamoService {
         double cuotaMensual = calcularMontoCuota(prestamo);
         double saldoRestante = prestamo.getMonto();  // Inicializamos con el monto total del préstamo
 
+        // Establecer la fecha de pago inicial como 30 días después de la fecha del préstamo
+        LocalDate fechaPrestamo = LocalDate.now();  // Fecha en la que se toma el préstamo
+        LocalDate fechaPago = fechaPrestamo.plusDays(30);  // Primer pago será 30 días después del préstamo
+
         for (int i = 1; i <= prestamo.getPlazo(); i++) {
             CronogramaPagos pago = new CronogramaPagos();
             pago.setPrestamo(prestamo);
-            pago.setFechaPago(LocalDate.now().plusMonths(i));
+            pago.setFechaPago(fechaPago);
             pago.setMontoCuota(cuotaMensual);
 
             // Calcular los pagos de intereses, amortización y saldo restante
@@ -362,6 +366,9 @@ public class PrestamoService {
 
             pago.setEstado("Pendiente");
             cronograma.add(pago);
+
+            // Incrementar la fecha de pago en 30 días para la siguiente cuota
+            fechaPago = fechaPago.plusDays(30);
         }
 
         return cronograma;

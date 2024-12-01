@@ -1,11 +1,11 @@
 spring.application.name=prestamo-inso
 server.servlet.context-path=/api/v1
 
-spring.datasource.url=jdbc:postgresql://localhost:5432/prestamo_db
+spring.datasource.url=jdbc:postgresql://autorack.proxy.rlwy.net:37642/railway
 
 spring.datasource.username=postgres
 
-spring.datasource.password=admin
+spring.datasource.password=hdmOKMZREJoYciuPPByNZvtQeUxNiWLx
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 
