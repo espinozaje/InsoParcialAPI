@@ -10,6 +10,7 @@ import com.vocacional.prestamoinso.Service.JwtUtilService;
 import com.vocacional.prestamoinso.Service.TrabajadorService;
 import com.vocacional.prestamoinso.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -130,6 +131,35 @@ public class TrabajadorController {
 
         response.put("message", "Trabajador no encontrado");
         return ResponseEntity.badRequest().body(response);
+    }
+
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+        try {
+            trabajadorService.generateResetPasswordToken(email);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(Map.of("message", "Se ha enviado un correo con instrucciones para restablecer su contraseña."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .body(Map.of("error", "Error al generar el token de recuperación: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        try {
+            trabajadorService.resetPassword(token, newPassword);
+
+            return ResponseEntity.ok(Map.of("message", "Contraseña actualizada exitosamente."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Error al restablecer la contraseña: " + e.getMessage()));
+        }
     }
 
 }

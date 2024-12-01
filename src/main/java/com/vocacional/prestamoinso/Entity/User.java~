@@ -3,6 +3,7 @@ package com.vocacional.prestamoinso.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vocacional.prestamoinso.Entity.enums.ERole;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -23,6 +24,10 @@ public class User {
     @NotBlank(message = "El username es obligatorio")
     @Column(unique = true)
     private String username;
+    @Email(message = "Correo no válido")
+    @NotBlank(message = "El correo es obligatorio")
+    @Column(unique = true)
+    private String email;
     @JsonIgnore
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")

@@ -3,6 +3,7 @@ package com.vocacional.prestamoinso.Entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -23,5 +24,5 @@ public class Prestamo {
     @OneToMany(mappedBy = "prestamo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CronogramaPagos> cronogramaPagos;
 
-  
+    private LocalDate fechaCreacion = LocalDate.now(); // Nueva columna para limitar por mes
 }

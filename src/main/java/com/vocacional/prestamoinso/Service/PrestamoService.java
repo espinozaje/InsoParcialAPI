@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,6 +75,17 @@ public class PrestamoService {
 
     public Prestamo crearPrestamo(String clienteId, double monto, int plazo, double interes) {
         Cliente cliente = clienteRepository.findByNroDocumento(clienteId);
+
+        YearMonth ahora = YearMonth.now();
+        Double totalPrestamosMes = prestamoRepository.obtenerTotalPrestamosMensuales(cliente.getId(), ahora.getYear(), ahora.getMonthValue());
+
+        if (totalPrestamosMes == null) {
+            totalPrestamosMes = 0.0; // Valor predeterminado si no hay datos
+        }
+
+        if (totalPrestamosMes + monto > 5000) {
+            throw new RuntimeException("El cliente no puede solicitar préstamos que sumen más de 5000 soles al mes.");
+        }
 
         Prestamo prestamo = new Prestamo();
         prestamo.setCliente(cliente);
