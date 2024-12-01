@@ -3,6 +3,7 @@ package com.vocacional.prestamoinso.Service;
 
 import com.vocacional.prestamoinso.Entity.Cliente;
 import com.vocacional.prestamoinso.Entity.Trabajador;
+import com.vocacional.prestamoinso.Entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -28,9 +29,13 @@ public class JwtUtilService {
     }
 
 
-    public String generateToken(Trabajador trabajador) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, trabajador.getUsername());
+        claims.put("userId", user.getId());
+        claims.put("username", user.getUsername());
+        claims.put("role", user.getRole());
+
+        return createToken(claims, user.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

@@ -1,0 +1,33 @@
+package com.vocacional.prestamoinso.Entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vocacional.prestamoinso.Entity.enums.ERole;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED)
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @NotBlank(message = "El nombre es obligatorio")
+    private String nombre;
+    @NotBlank(message = "El apellido es obligatorio")
+    private String apellido;
+    @NotBlank(message = "El username es obligatorio")
+    @Column(unique = true)
+    private String username;
+    @JsonIgnore
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    private String password;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ERole role;
+}

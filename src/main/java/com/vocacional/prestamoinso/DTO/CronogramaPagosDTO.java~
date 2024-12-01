@@ -14,7 +14,4 @@ public class CronogramaPagosDTO {
     private String estado;
     private LocalDate fechaPago;
     private double montoCuota;
-    private double pagoIntereses;  // Nueva columna: pago de intereses
-    private double amortizacion;   // Nueva columna: amortización
-    private double saldoRestante;
 }

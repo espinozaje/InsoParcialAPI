@@ -15,7 +15,7 @@ public class Prestamo {
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
-    private String nroDocumento;
+    private String dni;
     private double monto;
     private double interes;
     private int plazo; // En meses (ejemplo: 6 meses, 12 meses)

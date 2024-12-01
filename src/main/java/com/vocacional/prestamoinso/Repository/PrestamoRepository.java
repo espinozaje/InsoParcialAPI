@@ -7,5 +7,5 @@ import org.w3c.dom.stylesheets.LinkStyle;
 import java.util.List;
 
 public interface PrestamoRepository extends JpaRepository<Prestamo,Long> {
-    List<Prestamo> findByCliente_Dni(String dni);
+    List<Prestamo> findByCliente_NroDocumento(String dni);
 }

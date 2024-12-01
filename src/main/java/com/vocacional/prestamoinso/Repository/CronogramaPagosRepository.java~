@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface CronogramaPagosRepository extends JpaRepository<CronogramaPagos,Long> {
 
-    List<CronogramaPagos> findByPrestamoIdAndEstadoOrderByFechaPagoAsc(Long prestamoId, String estado);
+    List<CronogramaPagos> findByPrestamoIdAnd(Long prestamoId, String estado);
     List<CronogramaPagos> findByPrestamoId(Long id);
 }
