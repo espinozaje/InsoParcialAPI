@@ -1,8 +1,11 @@
 package com.vocacional.prestamoinso.Service;
 
+import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
@@ -145,118 +148,108 @@ public class PrestamoService {
 
 
     public byte[] generarPdf(Long prestamoId) throws IOException {
-        Prestamo prestamo = prestamoRepository.findById(prestamoId).orElseThrow(() -> new RuntimeException("Préstamo no encontrado"));
+        // Obtener información del préstamo
+        Prestamo prestamo = prestamoRepository.findById(prestamoId)
+                .orElseThrow(() -> new RuntimeException("Préstamo no encontrado"));
         List<CronogramaPagos> cronograma = cronogramaPagosRepository.findByPrestamoId(prestamoId);
 
+        // Configurar el documento PDF
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
 
-        if (prestamo.getNroDocumento().length() == 8) {
-            // Crear el PDF
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+        // Encabezado
+        Table headerTable = new Table(2);
+        headerTable.setWidth(UnitValue.createPercentValue(100));
+        headerTable.addCell(new Cell().add(new Paragraph("Documento Interno"))
+                .setFontSize(12)
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setBorder(Border.NO_BORDER));
+        document.add(headerTable);
 
-            // Título
-            document.add(new Paragraph("Detalle del Préstamo")
-                    .setFontSize(20)
-                    .setTextAlignment(TextAlignment.CENTER));
+        // Título principal
+        Paragraph titulo = new Paragraph(prestamo.getNroDocumento().length() == 8 ? "Detalle de Préstamo (DNI)" : "Detalle de Préstamo (RUC)")
+                .setFontSize(16)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(20);
+        document.add(titulo);
 
-            // Detalles del préstamo
-            document.add(new Paragraph("Cliente: " + prestamo.getCliente().getNombre() + " " + prestamo.getCliente().getApellidoPaterno() + " " + prestamo.getCliente().getApellidoMaterno()));
-            document.add(new Paragraph("Nro de Documento: " + prestamo.getNroDocumento()));
-            document.add(new Paragraph("Monto: " + prestamo.getMonto()));
-            document.add(new Paragraph("Interés: " + prestamo.getInteres() + "%"));
-            document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
-            document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
-            document.add(new Paragraph("\n"));
+        // Información general del cliente
+        document.add(new Paragraph("Información del Cliente")
+                .setUnderline()
+                .setFontSize(12)
+                .setMarginBottom(10));
+        document.add(new Paragraph("Nombre: " + prestamo.getCliente().getNombre() +
+                (prestamo.getCliente().getApellidoPaterno() != null ? " " + prestamo.getCliente().getApellidoPaterno() : "") +
+                (prestamo.getCliente().getApellidoMaterno() != null ? " " + prestamo.getCliente().getApellidoMaterno() : "")));
+        document.add(new Paragraph("Nro de Documento: " + prestamo.getNroDocumento()));
+        document.add(new Paragraph("Monto del Préstamo: S/. " + prestamo.getMonto()));
+        document.add(new Paragraph("Tasa de Interés: " + prestamo.getInteres() + "%"));
+        document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
+        document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
 
-            // Tabla de cronograma de pagos
-            Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
-            table.setWidth(UnitValue.createPercentValue(100));
-            table.addHeaderCell("N°");
-            table.addHeaderCell("Fecha de Pago");
-            table.addHeaderCell("Monto Cuota");
-            table.addHeaderCell("Pago Intereses");
-            table.addHeaderCell("Amortización");
-            table.addHeaderCell("Saldo Restante");
-            table.addHeaderCell("Estado");
-
-            int index = 1;
-            for (CronogramaPagos pago : cronograma) {
-                table.addCell(String.valueOf(index++));
-                table.addCell(pago.getFechaPago().toString());
-                table.addCell(String.format("%.2f", pago.getMontoCuota()));
-                table.addCell(String.format("%.2f", pago.getPagoIntereses()));  // Mostrar el pago de intereses
-                table.addCell(String.format("%.2f", pago.getAmortizacion()));    // Mostrar la amortización
-                table.addCell(String.format("%.2f", pago.getSaldoRestante()));  // Mostrar el saldo restante
-                table.addCell(pago.getEstado());
-            }
-
-            document.add(table);
-
-            // Cierre del documento
-            document.close();
-
-            // Retornar el PDF como un byte array
-            return baos.toByteArray();
-        } else {
-
-            // Crear el PDF
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
-
-            // Título
-            document.add(new Paragraph("Detalle del Préstamo")
-                    .setFontSize(20)
-                    .setTextAlignment(TextAlignment.CENTER));
-
-            // Detalles del préstamo
-            document.add(new Paragraph("Cliente: " + prestamo.getCliente().getNombre() ));
-            document.add(new Paragraph("Nro de Documento: " + prestamo.getNroDocumento()));
-            document.add(new Paragraph("Direccion: " + prestamo.getCliente().getDireccion()));
+        // Información adicional para RUC
+        if (prestamo.getNroDocumento().length() != 8) {
+            document.add(new Paragraph("Dirección: " + prestamo.getCliente().getDireccion()));
             document.add(new Paragraph("Distrito: " + prestamo.getCliente().getDistrito()));
-            document.add(new Paragraph("Departamento: " + prestamo.getCliente().getDepartamento()));
             document.add(new Paragraph("Provincia: " + prestamo.getCliente().getProvincia()));
-            document.add(new Paragraph("Monto: " + prestamo.getMonto()));
-            document.add(new Paragraph("Interés: " + prestamo.getInteres() + "%"));
-            document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
-            document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
-            document.add(new Paragraph("\n"));
-
-            // Tabla de cronograma de pagos
-            Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
-            table.setWidth(UnitValue.createPercentValue(100));
-            table.addHeaderCell("N°");
-            table.addHeaderCell("Fecha de Pago");
-            table.addHeaderCell("Monto Cuota");
-            table.addHeaderCell("Pago Intereses");
-            table.addHeaderCell("Amortización");
-            table.addHeaderCell("Saldo Restante");
-            table.addHeaderCell("Estado");
-
-            int index = 1;
-            for (CronogramaPagos pago : cronograma) {
-                table.addCell(String.valueOf(index++));
-                table.addCell(pago.getFechaPago().toString());
-                table.addCell(String.format("%.2f", pago.getMontoCuota()));
-                table.addCell(String.format("%.2f", pago.getPagoIntereses()));  // Mostrar el pago de intereses
-                table.addCell(String.format("%.2f", pago.getAmortizacion()));    // Mostrar la amortización
-                table.addCell(String.format("%.2f", pago.getSaldoRestante()));  // Mostrar el saldo restante
-                table.addCell(pago.getEstado());
-            }
-
-            document.add(table);
-
-            // Cierre del documento
-            document.close();
-
-            // Retornar el PDF como un byte array
-            return baos.toByteArray();
+            document.add(new Paragraph("Departamento: " + prestamo.getCliente().getDepartamento()));
         }
 
+        // Espaciado antes de la tabla
+        document.add(new Paragraph("\n"));
+
+        // Crear la tabla de cronograma de pagos
+        Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
+        table.setWidth(UnitValue.createPercentValue(100));
+        table.addHeaderCell(new Cell().add(new Paragraph("N°")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Fecha de Pago")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Monto Cuota")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Pago Intereses")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Amortización")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Saldo Restante")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Estado")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+
+        int index = 1;
+        for (CronogramaPagos pago : cronograma) {
+            table.addCell(new Cell().add(new Paragraph(String.valueOf(index++))));
+            table.addCell(new Cell().add(new Paragraph(pago.getFechaPago().toString())));
+            table.addCell(new Cell().add(new Paragraph(String.format("%.2f", pago.getMontoCuota()))));
+            table.addCell(new Cell().add(new Paragraph(String.format("%.2f", pago.getPagoIntereses()))));
+            table.addCell(new Cell().add(new Paragraph(String.format("%.2f", pago.getAmortizacion()))));
+            table.addCell(new Cell().add(new Paragraph(String.format("%.2f", pago.getSaldoRestante()))));
+            table.addCell(new Cell().add(new Paragraph(pago.getEstado())));
+        }
+        document.add(table);
+
+        // Espaciado antes de la firma
+        document.add(new Paragraph("\n"));
+
+        // Campo de firma
+        Table firmaTable = new Table(1);
+        firmaTable.setWidth(UnitValue.createPercentValue(50));
+        firmaTable.addCell(new Cell().add(new Paragraph("Firma del Cliente:"))
+                .setBorder(Border.NO_BORDER));
+        firmaTable.addCell(new Cell().add(new Paragraph("\n\n\n"))
+                .setBorder(Border.NO_BORDER));
+        document.add(firmaTable);
+
+        // Pie de página
+        Paragraph footer = new Paragraph("Documento generado automáticamente por el sistema.")
+                .setFontSize(8)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginTop(20);
+        document.add(footer);
+
+        // Cerrar el documento
+        document.close();
+
+        // Retornar como arreglo de bytes
+        return baos.toByteArray();
     }
+
+
 
     private List<CronogramaPagos> generarCronograma(Prestamo prestamo) {
         List<CronogramaPagos> cronograma = new ArrayList<>();
@@ -379,110 +372,102 @@ public class PrestamoService {
     public byte[] generarPDF(CronogramaPagos pago) {
         // Obtener el préstamo asociado al pago
         Prestamo prestamo = pago.getPrestamo();
-        if (prestamo.getCliente().getNroDocumento().length() == 8) {
-            // Crear el PDF
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+        Cliente cliente = prestamo.getCliente();
+        String nroDocumento = cliente.getNroDocumento();
 
-            // Título del documento
-            document.add(new Paragraph("Detalle del la cuota")
-                    .setFontSize(20)
-                    .setTextAlignment(TextAlignment.CENTER));
+        // Crear el PDF
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
 
-            // Detalles del préstamo
-            document.add(new Paragraph("Cliente: " + prestamo.getCliente().getNombre() + " " +
-                    prestamo.getCliente().getApellidoPaterno() + " " + prestamo.getCliente().getApellidoMaterno()));
-            document.add(new Paragraph("Nro de Documento: " + prestamo.getNroDocumento()));
-            document.add(new Paragraph("Monto: " + prestamo.getMonto()));
-            document.add(new Paragraph("Interés: " + prestamo.getInteres() + "%"));
-            document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
-            document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
-            document.add(new Paragraph("\n"));
+        // Encabezado
+        Table headerTable = new Table(2);
+        headerTable.setWidth(UnitValue.createPercentValue(100));
+        headerTable.addCell(new Cell().add(new Paragraph("Documento Interno"))
+                .setFontSize(12)
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setBorder(Border.NO_BORDER));
+        document.add(headerTable);
 
-            // Tabla de cronograma de pagos
-            Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
-            table.setWidth(UnitValue.createPercentValue(100));
-            table.addHeaderCell("N°");
-            table.addHeaderCell("Fecha de Pago");
-            table.addHeaderCell("Monto Cuota");
-            table.addHeaderCell("Pago Intereses");
-            table.addHeaderCell("Amortización");
-            table.addHeaderCell("Saldo Restante");
-            table.addHeaderCell("Estado");
+        // Título del documento
+        Paragraph titulo = new Paragraph("Detalle de la Cuota")
+                .setFontSize(20)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(20);
+        document.add(titulo);
 
-            // Agregar la fila correspondiente al pago
-            table.addCell("1");  // N° de pago (si solo hay uno)
-            table.addCell(pago.getFechaPago().toString());
-            table.addCell(String.format("%.2f", pago.getMontoCuota()));
-            table.addCell(String.format("%.2f", pago.getPagoIntereses()));  // Pago de intereses
-            table.addCell(String.format("%.2f", pago.getAmortizacion()));    // Amortización
-            table.addCell(String.format("%.2f", pago.getSaldoRestante()));  // Saldo restante
-            table.addCell(pago.getEstado());
+        // Detalles del cliente
+        document.add(new Paragraph("Información del Cliente")
+                .setUnderline()
+                .setFontSize(12)
+                .setMarginBottom(10));
+        document.add(new Paragraph("Nombre: " + cliente.getNombre() +
+                (nroDocumento.length() == 8 ? " " + cliente.getApellidoPaterno() + " " + cliente.getApellidoMaterno() : "")));
+        document.add(new Paragraph("Nro de Documento: " + nroDocumento));
 
-            document.add(table);
-
-            // Cierre del documento
-            document.close();
-
-            // Retornar el PDF como un byte array
-            return baos.toByteArray();
+        // Datos adicionales para RUC
+        if (nroDocumento.length() != 8) {
+            document.add(new Paragraph("Dirección: " + cliente.getDireccion()));
+            document.add(new Paragraph("Distrito: " + cliente.getDistrito()));
+            document.add(new Paragraph("Departamento: " + cliente.getDepartamento()));
+            document.add(new Paragraph("Provincia: " + cliente.getProvincia()));
         }
-        else {
-            // Crear el PDF
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
 
-            // Título del documento
-            document.add(new Paragraph("Detalle del la cuota")
-                    .setFontSize(20)
-                    .setTextAlignment(TextAlignment.CENTER));
+        // Detalles del préstamo
+        document.add(new Paragraph("Monto del Préstamo: S/. " + prestamo.getMonto()));
+        document.add(new Paragraph("Tasa de Interés: " + prestamo.getInteres() + "%"));
+        document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
+        document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
+        document.add(new Paragraph("\n"));
 
-            // Detalles del préstamo
-            document.add(new Paragraph("Cliente: " + prestamo.getCliente().getNombre() ));
-            document.add(new Paragraph("Nro de Documento: " + prestamo.getNroDocumento()));
-            document.add(new Paragraph("Direccion: " + prestamo.getCliente().getDireccion()));
-            document.add(new Paragraph("Distrito: " + prestamo.getCliente().getDistrito()));
-            document.add(new Paragraph("Departamento: " + prestamo.getCliente().getDepartamento()));
-            document.add(new Paragraph("Provincia: " + prestamo.getCliente().getProvincia()));
-            document.add(new Paragraph("Monto: " + prestamo.getMonto()));
-            document.add(new Paragraph("Interés: " + prestamo.getInteres() + "%"));
-            document.add(new Paragraph("Plazo: " + prestamo.getPlazo() + " meses"));
-            document.add(new Paragraph("Fecha de Creación: " + LocalDate.now()));
-            document.add(new Paragraph("\n"));
+        // Tabla con el detalle de la cuota
+        Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
+        table.setWidth(UnitValue.createPercentValue(100));
+        table.addHeaderCell(new Cell().add(new Paragraph("N°")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Fecha de Pago")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Monto Cuota")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Pago Intereses")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Amortización")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Saldo Restante")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
+        table.addHeaderCell(new Cell().add(new Paragraph("Estado")).setBackgroundColor(ColorConstants.LIGHT_GRAY));
 
-            // Tabla de cronograma de pagos
-            Table table = new Table(new float[]{1, 3, 3, 2, 3, 3, 3});
-            table.setWidth(UnitValue.createPercentValue(100));
-            table.addHeaderCell("N°");
-            table.addHeaderCell("Fecha de Pago");
-            table.addHeaderCell("Monto Cuota");
-            table.addHeaderCell("Pago Intereses");
-            table.addHeaderCell("Amortización");
-            table.addHeaderCell("Saldo Restante");
-            table.addHeaderCell("Estado");
+        // Agregar los datos del pago
+        table.addCell("1");
+        table.addCell(pago.getFechaPago().toString());
+        table.addCell(String.format("%.2f", pago.getMontoCuota()));
+        table.addCell(String.format("%.2f", pago.getPagoIntereses()));
+        table.addCell(String.format("%.2f", pago.getAmortizacion()));
+        table.addCell(String.format("%.2f", pago.getSaldoRestante()));
+        table.addCell(pago.getEstado());
+        document.add(table);
 
-            // Agregar la fila correspondiente al pago
-            table.addCell("1");  // N° de pago (si solo hay uno)
-            table.addCell(pago.getFechaPago().toString());
-            table.addCell(String.format("%.2f", pago.getMontoCuota()));
-            table.addCell(String.format("%.2f", pago.getPagoIntereses()));  // Pago de intereses
-            table.addCell(String.format("%.2f", pago.getAmortizacion()));    // Amortización
-            table.addCell(String.format("%.2f", pago.getSaldoRestante()));  // Saldo restante
-            table.addCell(pago.getEstado());
+        // Espaciado antes de la firma
+        document.add(new Paragraph("\n"));
 
-            document.add(table);
+        // Campo de firma
+        Table firmaTable = new Table(1);
+        firmaTable.setWidth(UnitValue.createPercentValue(50));
+        firmaTable.addCell(new Cell().add(new Paragraph("Firma del Cliente:"))
+                .setBorder(Border.NO_BORDER));
+        firmaTable.addCell(new Cell().add(new Paragraph("\n\n\n"))
+                .setBorder(Border.NO_BORDER));
+        document.add(firmaTable);
 
-            // Cierre del documento
-            document.close();
+        // Pie de página
+        Paragraph footer = new Paragraph("Documento generado automáticamente por el sistema.")
+                .setFontSize(8)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginTop(20);
+        document.add(footer);
 
-            // Retornar el PDF como un byte array
-            return baos.toByteArray();
-        }
+        // Cerrar el documento
+        document.close();
+
+        // Retornar el PDF como un byte array
+        return baos.toByteArray();
     }
+
 
 
 
