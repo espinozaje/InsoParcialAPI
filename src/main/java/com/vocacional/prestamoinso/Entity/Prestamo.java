@@ -1,5 +1,6 @@
 package com.vocacional.prestamoinso.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -25,5 +26,6 @@ public class Prestamo {
     @OneToMany(mappedBy = "prestamo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CronogramaPagos> cronogramaPagos;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "America/Lima")
     private LocalDateTime fechaCreacion = LocalDateTime.now(); // Nueva columna para limitar por mes
 }

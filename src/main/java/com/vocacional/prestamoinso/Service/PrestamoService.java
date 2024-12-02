@@ -353,7 +353,7 @@ public class PrestamoService {
 
         // Establecer la fecha de pago inicial como 30 días después de la fecha del préstamo
         LocalDate fechaPrestamo = LocalDate.now();  // Fecha en la que se toma el préstamo
-        LocalDate fechaPago = fechaPrestamo.plusDays(30);  // Primer pago será 30 días después del préstamo
+        LocalDate fechaPago = fechaPrestamo.plusDays(30);
 
         for (int i = 1; i <= prestamo.getPlazo(); i++) {
             CronogramaPagos pago = new CronogramaPagos();
