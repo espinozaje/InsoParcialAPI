@@ -366,7 +366,7 @@ public class PrestamoService {
 
         if (todasPagadas) {
             // Actualizar el estado del préstamo a "Pagada"
-            prestamo.setEstado("Pagado");
+            prestamo.setEstado("Pagada");
             prestamoRepository.save(prestamo);
         }
     }

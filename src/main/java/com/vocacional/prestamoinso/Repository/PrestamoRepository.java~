@@ -19,5 +19,5 @@ public interface PrestamoRepository extends JpaRepository<Prestamo,Long> {
     List<Prestamo> findAllByOrderByFechaCreacionDesc();
     List<Prestamo> findByClienteAndEstado(Cliente cliente, String estado);
 
-    List<Prestamo> findByEstado(String estado);
+    
 }

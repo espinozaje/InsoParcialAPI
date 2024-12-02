@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -39,13 +40,29 @@ public class PrestamoController {
     private ClienteRepository clienteRepository;
     @Autowired
     private PrestamoMapper prestamoMapper;
-    @Autowired
-    private PrestamoRepository prestamoRepository;
 
+    @PostMapping("/actualizar-deudas")
+    public ResponseEntity<Map<String, Object>> actualizarDeudas() {
+        prestamoService.actualizarEstadoPrestamos();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Actualización de estados completada");
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.OK.value());
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/filtrar")
+    public ResponseEntity<List<Prestamo>> filtrarPrestamosPorEstado(@RequestParam String estado) {
+        List<Prestamo> prestamos = prestamoService.obtenerPrestamosPorEstado(estado);
+        return ResponseEntity.ok(prestamos);
+    }
 
     @GetMapping("/listar")
     public List<Prestamo> obtenerPrestamosOrdenadosPorEstado() {
-        return prestamoRepository.findAllByOrderByFechaCreacionDesc();
+        return prestamoService.findAllByOrderByFechaCreacionDesc();
     }
 
     @PostMapping("/crear")
