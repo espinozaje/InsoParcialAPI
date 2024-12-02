@@ -13,5 +13,6 @@ public class PrestamoDTO {
         private double monto;
         private int plazo;
         private double interes;
+        private String estado;
         private List<CronogramaPagosDTO> cronogramaPagos;
     }

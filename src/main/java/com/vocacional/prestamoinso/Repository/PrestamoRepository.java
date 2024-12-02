@@ -1,5 +1,6 @@
 package com.vocacional.prestamoinso.Repository;
 
+import com.vocacional.prestamoinso.Entity.Cliente;
 import com.vocacional.prestamoinso.Entity.Prestamo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,4 +15,7 @@ public interface PrestamoRepository extends JpaRepository<Prestamo,Long> {
     @Query("SELECT SUM(p.monto) FROM Prestamo p WHERE p.cliente.id = :clienteId AND " +
             "EXTRACT(YEAR FROM p.fechaCreacion) = :anio AND EXTRACT(MONTH FROM p.fechaCreacion) = :mes AND p.cronogramaPagos IS NOT EMPTY")
     Double obtenerTotalPrestamosMensuales(@Param("clienteId") Long clienteId, @Param("anio") int anio, @Param("mes") int mes);
+
+    List<Prestamo> findAllByOrderByFechaCreacionDesc();
+    List<Prestamo> findByClienteAndEstado(Cliente cliente, String estado);
 }

@@ -4,9 +4,11 @@ import com.vocacional.prestamoinso.DTO.PrestamoDTO;
 import com.vocacional.prestamoinso.DTO.ReniecResponseDTO;
 import com.vocacional.prestamoinso.DTO.SunatResponseDTO;
 import com.vocacional.prestamoinso.Entity.Cliente;
+import com.vocacional.prestamoinso.Entity.CronogramaPagos;
 import com.vocacional.prestamoinso.Entity.Prestamo;
 import com.vocacional.prestamoinso.Mapper.PrestamoMapper;
 import com.vocacional.prestamoinso.Repository.ClienteRepository;
+import com.vocacional.prestamoinso.Repository.PrestamoRepository;
 import com.vocacional.prestamoinso.Service.ClienteService;
 import com.vocacional.prestamoinso.Service.PrestamoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,53 +39,68 @@ public class PrestamoController {
     private ClienteRepository clienteRepository;
     @Autowired
     private PrestamoMapper prestamoMapper;
+    @Autowired
+    private PrestamoRepository prestamoRepository;
+
+
+    @GetMapping("/listar")
+    public List<Prestamo> obtenerPrestamosOrdenadosPorEstado() {
+        return prestamoRepository.findAllByOrderByFechaCreacionDesc();
+    }
 
     @PostMapping("/crear")
-    public ResponseEntity<byte[]> crearPrestamo(@RequestBody PrestamoDTO request) {
+    public ResponseEntity<Map<String, String>> crearPrestamo(@RequestBody PrestamoDTO request) {
         // Validar el DNI del cliente con RENIEC
         if (request.getNroDocumento().length() != 11) {
             ReniecResponseDTO datosReniec = clienteService.validarDNI(request.getNroDocumento());
             if (datosReniec == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // No se encontró el DNI en RENIEC
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Collections.singletonMap("mensaje", "DNI no encontrado en RENIEC."));
             }
         } else {
-            SunatResponseDTO datosReniec = clienteService.validarRUC(request.getNroDocumento());
-            if (datosReniec == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // No se encontró el DNI en RENIEC
+            SunatResponseDTO datosSunat = clienteService.validarRUC(request.getNroDocumento());
+            if (datosSunat == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Collections.singletonMap("mensaje", "RUC no encontrado en SUNAT."));
+            }
+
+            // Verificar el estado del RUC
+            if ("BAJA DE OFICIO".equals(datosSunat.getEstado())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Collections.singletonMap("mensaje", "El cliente está en estado de baja de oficio, no se puede crear un préstamo."));
             }
         }
 
         // Verificar si el cliente existe en la base de datos
         Cliente cliente = clienteRepository.findByNroDocumento(request.getNroDocumento());
         if (cliente == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // Cliente no encontrado
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("mensaje", "Cliente no encontrado."));
         }
 
         // Crear el préstamo
         try {
-            // Crear el préstamo y obtener el PDF en memoria
-            ByteArrayOutputStream pdfBytes = prestamoService.crearPrestamo(
+            prestamoService.crearPrestamo(
                     cliente.getNroDocumento(),
                     request.getMonto(),
                     request.getPlazo(),
                     request.getInteres()
             );
 
-            // Configurar los encabezados HTTP para enviar el PDF
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDisposition(
-                    ContentDisposition.inline().filename("prestamo.pdf").build()
-            );
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(pdfBytes.toByteArray());
+            // Retornar una respuesta JSON exitosa
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", "Préstamo creado exitosamente.");
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            // Retornar el mensaje de error como respuesta JSON
+            Map<String, String> response = new HashMap<>();
+            response.put("mensaje", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+
 
     @GetMapping("/prestamoPorDni/{dni}")
     public ResponseEntity<List<PrestamoDTO>> getPrestamosporDNI(@PathVariable String dni) {
@@ -101,6 +121,22 @@ public class PrestamoController {
     public ResponseEntity<Void> marcarComoPagado(@PathVariable Long id) {
         prestamoService.marcarComoPagado(id);
         return ResponseEntity.ok().build();
+    }
+
+
+    @GetMapping("/generarPDF/{id}")
+    public ResponseEntity<byte[]> generarPDF(@PathVariable Long id) {
+        CronogramaPagos pago = prestamoService.obtenerPagoPorId(id);
+
+
+        byte[] pdfBytes = prestamoService.generarPDF(pago);
+
+        // Retornar el PDF como un archivo descargable
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=prestamo_pagado_" + id + ".pdf");
+        headers.add(HttpHeaders.CONTENT_TYPE, "application/pdf");
+
+        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
 
     @DeleteMapping("/eliminar/{id}")

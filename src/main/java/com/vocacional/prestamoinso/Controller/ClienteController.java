@@ -31,12 +31,16 @@ public class ClienteController {
 
     @PostMapping("/registrar")
     public ResponseEntity<Cliente> registrarCliente(@RequestBody ClienteDTO registroClienteDTO) {
+        Cliente cliente;
+        // Si el cliente ya existe, no lanzamos la excepción Conflict
         if (clienteRepository.existsByNroDocumento(registroClienteDTO.getNroDocumento())) {
-            throw new ConflictException("Cliente ya existe"); // Asegúrate de definir esta excepción
+            cliente = clienteRepository.findByNroDocumento(registroClienteDTO.getNroDocumento());
+        } else {
+            cliente = clienteService.registrarCliente(registroClienteDTO);
         }
-        Cliente cliente = clienteService.registrarCliente(registroClienteDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(cliente);
     }
+
 
 
 

@@ -27,5 +27,7 @@ public class Prestamo {
     private List<CronogramaPagos> cronogramaPagos;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "America/Lima")
-    private LocalDateTime fechaCreacion = LocalDateTime.now(); // Nueva columna para limitar por mes
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+    private String estado;
 }
