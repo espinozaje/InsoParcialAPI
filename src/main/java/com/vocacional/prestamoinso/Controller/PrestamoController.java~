@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -57,28 +56,29 @@ public class PrestamoController {
         }
 
         // Crear el préstamo
+        Prestamo prestamo = prestamoService.crearPrestamo(
+                cliente.getNroDocumento(), request.getMonto(), request.getPlazo(), request.getInteres()
+        );
+
+        // Ruta del PDF generado
+        String pdfPath = "prestamo_" + prestamo.getId() + ".pdf";
+
         try {
-            // Crear el préstamo y obtener el PDF en memoria
-            ByteArrayOutputStream pdfBytes = prestamoService.crearPrestamo(
-                    cliente.getNroDocumento(),
-                    request.getMonto(),
-                    request.getPlazo(),
-                    request.getInteres()
-            );
+            // Leer el archivo PDF como un array de bytes
+            File pdfFile = new File(pdfPath);
+            byte[] pdfBytes = Files.readAllBytes(pdfFile.toPath());
 
             // Configurar los encabezados HTTP para enviar el PDF
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDisposition(
-                    ContentDisposition.inline().filename("prestamo.pdf").build()
-            );
+            headers.setContentDisposition(ContentDisposition.inline().filename(pdfFile.getName()).build());
 
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body(pdfBytes.toByteArray());
-        } catch (RuntimeException e) {
+                    .body(pdfBytes);
+        } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Error al procesar el archivo
         }
     }
 

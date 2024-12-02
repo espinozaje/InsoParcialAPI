@@ -123,7 +123,7 @@ public class PrestamoService {
     }
 
 
-    private ByteArrayOutputStream generarPdfPrestamo(Prestamo prestamo, List<CronogramaPagos> cronograma, ReniecResponseDTO reniecResponse){
+    private ByteArrayOutputStream generarPdfPrestamo(Prestamo prestamo, List<CronogramaPagos> cronograma, ReniecResponseDTO reniecResponse) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(byteArrayOutputStream);
         PdfDocument pdf = new PdfDocument(writer);
@@ -173,7 +173,7 @@ public class PrestamoService {
     }
 
 
-    private ByteArrayOutputStream generarPdfPrestamo(Prestamo prestamo, List<CronogramaPagos> cronograma, SunatResponseDTO sunatResponse){
+    private ByteArrayOutputStream generarPdfPrestamo(Prestamo prestamo, List<CronogramaPagos> cronograma, SunatResponseDTO sunatResponse) throws IOException {
         // Crear un flujo de salida en memoria
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         PdfWriter writer = new PdfWriter(byteArrayOutputStream);
